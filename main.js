@@ -13,10 +13,11 @@ let include = [
         ,to: (url) => url.replace("https://github.com/", "https://hub.fastgit.org/")
     }
 ]
+let ap;
 
 module.exports = class ProxyGithub extends Plugin {
     onload(){
-        let ap = window.ajaxPromise;
+        ap = window.ajaxPromise;
         window.ajaxPromise = function(e){
             for(var key in include){
                 let item = include[key]
@@ -27,5 +28,8 @@ module.exports = class ProxyGithub extends Plugin {
             }
             return ap(e)
         }
-    }    
+    }
+    onunload(){
+        window.ajaxPromise = ap;
+    }
 }
