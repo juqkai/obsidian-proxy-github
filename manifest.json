@@ -1,0 +1,10 @@
+{
+	"id": "ProxyGithub",
+	"name": "proxy github",
+	"version": "1.0.0",
+	"minAppVersion": "0.12.0",
+	"description": "因为某些原因，在国内经常无法下载 Obsidian 的社区插件。这个项目的主要目的就是修复这种情况，让国内的用户也可以无障碍的下载社区插件。",
+	"author": "juqkai",
+	"authorUrl": "https://obsidian.md",
+	"isDesktopOnly": false
+}
