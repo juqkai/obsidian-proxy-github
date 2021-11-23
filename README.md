@@ -28,11 +28,9 @@
 
 ### 上手指南
 
-1. 下载 [obsidian-proxy-github.zip](https://gitee.com/juqkai/obsidian-proxy-github/attach_files/878763/download/obsidian-proxy-github.zip)
+1. 下载 [obsidian-proxy-github.zip](https://gitee.com/juqkai/obsidian-proxy-github/releases)
 2. 解压 obsidian-proxy-github.zip
 3. 将解压的文件夹放入笔记目录下的插件目录内。如：XXX/.obsidian/plugins
-4. 如果是第一次使用这个插件，需要执行 【XXX/.obsidian/plugins/obsidian-proxy-github/ObsidianLink.bat】在桌面创建一个快捷方式。作用是取消安全限制，不然会因为跨域问题无法下载插件。
-5. 此后，如果需要安装插件时，需要运行桌面上新创建的 Obsidian 快捷方式
 
 
 ### 作者
