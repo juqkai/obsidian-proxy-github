@@ -12,7 +12,7 @@ let include = [
     }
     , {
         match: (url) => url.startsWith("https://github.com/") >= 0
-        , to: (url) => url.replace("https://github.com/", "https://hub.fastgit.org/")
+        , to: (url) => url.replace("https://github.com/", "https://hub.fastgit.xyz/")
     }
 ]
 
