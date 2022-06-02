@@ -1,27 +1,60 @@
-const {Plugin} = require("obsidian");
+const {Plugin, PluginSettingTab, Setting } = require("obsidian");
 
+let server = 'mirr'
+
+let proMap = {
+	fastgit:{
+		down:"https://download.fastgit.org/"
+		,raw:"https://raw.fastgit.org/"
+		,home:"https://hub.fastgit.org/"
+	}
+	,mtr:{
+		down:"https://download.fastgit.org/"
+		,raw:"https://raw-gh.gcdn.mirr.one/"
+		,home:"https://api.mtr.pub/"
+	}
+	,ghproxy:{
+		down:"https://mirror.ghproxy.com/https://github.com/"
+		,raw:"https://mirror.ghproxy.com/https://github.com/"
+		,home:"https://mirror.ghproxy.com/https://github.com/"
+	}
+	,gitclone:{
+		down:"https://download.fastgit.org/"
+		,raw:"https://raw.fastgit.org/"
+		,home:"https://gitclone.com/github.com/"
+	}
+	,mirr:{
+		down:"https://gh.gcdn.mirr.one/"
+		,raw:"https://raw-gh.gcdn.mirr.one/"
+		,home:"https://gh.gcdn.mirr.one/"
+	}
+}
 
 let include = [
     {
         match: (url) => url.indexOf("/releases/download/") >= 0
-        , to: (url) => url.replace("https://github.com/", "https://download.fastgit.org/")
+        , to: (url) => url.replace("https://github.com/", proMap[server].down)
     }
     , {
         match: (url) => url.startsWith("https://raw.githubusercontent.com/") >= 0
-        , to: (url) => url.replace("https://raw.githubusercontent.com/", "https://raw.fastgit.org/")
+        , to: (url) => url.replace("https://raw.githubusercontent.com/", proMap[server].raw)
     }
     , {
         match: (url) => url.startsWith("https://github.com/") >= 0
-        , to: (url) => url.replace("https://github.com/", "https://hub.fastgit.org/")
+        , to: (url) => url.replace("https://github.com/", proMap[server].home)
     }
 ]
 
 // 匹配URL
 function matchUrl(e) {
+	console.log("开始访问：" + JSON.stringify(e))
     for (var key in include) {
         let item = include[key]
-        if (item.match(e.url)) {
+		console.log(key)
+		console.log(item)
+        if (e.url && item.match(e.url)) {
             e.url = item.to(e.url)
+            console.log("要访问的地址：" + e.url)
             if (!e.headers) {
                 e.headers = {}
             }
@@ -30,7 +63,6 @@ function matchUrl(e) {
             return true;
         }
     }
-    console.log("开始访问：" + JSON.stringify(e))
     return false;
 }
 
@@ -153,11 +185,13 @@ function apElectron() {
     var ap;
     this.regedit = function() {
         ap = window.require("electron").ipcRenderer.send;
+		debugger
         console.log(ap)
-        window.require("electron").ipcRenderer.send = function (a,b,e){
+        window.require("electron").ipcRenderer.send = function (a,b,e,...rest){
+			debugger
             matchUrl(e);
             new window.Notice("正在通过 ProxyGithub 来代理访问社区插件！")
-            ap(a,b,e);
+            ap(a,b,e, ...rest);
             // if (matchUrl(e)) {
             //     return ap(e);
             // }
@@ -169,16 +203,61 @@ function apElectron() {
     }
 }
 
+
+
+
+class ProxyGithubSettingTab extends PluginSettingTab {
+
+    constructor(app, plugin) {
+        console.log("加载了tab~~~~~~~~~~~~~~~~~~~~~~")
+        super(app, plugin)
+        this.plugin = plugin
+    }
+    async display() {
+        this.containerEl.empty()
+        new Setting(this.containerEl)
+            .setName('代理服务器')
+            .setDesc(`通过选择不同的服务器来切换代理，可以解决某些情况下，某个服务器无法访问的情况。当前代理服务器：${this.plugin.settings.server}`)
+            // .setValue(this.plugin.settings.server) // <-- Add me!
+            .addDropdown(dropDown => {
+                dropDown.addOption('mirr', '请选择');
+                dropDown.addOption('fastgit', 'fastgit');
+                dropDown.addOption('mtr', 'mtr');
+                dropDown.addOption('ghproxy', 'ghproxy');
+                dropDown.addOption('gitclone', 'gitclone');
+                dropDown.addOption('mirr', 'mirr');
+                dropDown.onChange(async (value) =>	{
+                    this.plugin.settings.server=value
+                    // this.plugin.settings.server = value;
+                    await this.plugin.saveSettings();
+                });
+            });
+    }
+}
+
+
+
+
 let app = new apProxy();
 let apc = new apCapacitor();
 let ape = new apElectron();
 module.exports = class ProxyGithub extends Plugin {
     onload() {
-        new window.Notice("添加 ProxyGithub 代理访问社区插件！")
+        new window.Notice("添加 ProxyGithub 代理访问社区插件！");
+        this.addSettingTab(new ProxyGithubSettingTab(this.app, this));
         ape.regedit();
         apc.regedit();
         app.regedit();
+        this.settings = {server:'mirr'}
     }
+    async loadSettings() {
+		this.settings = Object.assign({}, {server:'mirr'}, await this.loadData());
+	}
+    async saveSettings() {
+        await this.saveData(this.settings);
+		server = this.settings.server;
+		debugger
+	}
 
     onunload() {
         ape.unRegedit()
