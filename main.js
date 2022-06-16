@@ -4,31 +4,64 @@ let server = 'mirr'
 
 let proMap = {
 	fastgit:{
-		down:"https://download.fastgit.org/"
-		,raw:"https://raw.fastgit.org/"
-		,home:"https://hub.fastgit.org/"
-	}
-	,mtr:{
-		down:"https://download.fastgit.org/"
-		,raw:"https://raw-gh.gcdn.mirr.one/"
-		,home:"https://api.mtr.pub/"
-	}
-	,ghproxy:{
-		down:"https://mirror.ghproxy.com/https://github.com/"
-		,raw:"https://mirror.ghproxy.com/https://github.com/"
-		,home:"https://mirror.ghproxy.com/https://github.com/"
-	}
-	,gitclone:{
-		down:"https://download.fastgit.org/"
-		,raw:"https://raw.fastgit.org/"
-		,home:"https://gitclone.com/github.com/"
-	}
-	,mirr:{
-		down:"https://gh.gcdn.mirr.one/"
-		,raw:"https://raw-gh.gcdn.mirr.one/"
-		,home:"https://gh.gcdn.mirr.one/"
-	}
+		down:"https://download.fastgit.org/",
+		raw:"https://raw.fastgit.org/",
+		home:"https://hub.fastgit.org/",
+	},
+    mtr:{
+		down:"https://download.fastgit.org/",
+        raw:"https://raw-gh.gcdn.mirr.one/",
+        home:"https://api.mtr.pub/",
+	},
+    ghproxy:{
+		down:"https://mirror.ghproxy.com/https://github.com/",
+		raw:"https://mirror.ghproxy.com/https://github.com/",
+		home:"https://mirror.ghproxy.com/https://github.com/",
+	},
+    gitclone:{
+		down:"https://download.fastgit.org/",
+		raw:"https://raw.fastgit.org/",
+		home:"https://gitclone.com/github.com/"
+	},
+    mirr:{
+		down:"https://gh.gcdn.mirr.one/",
+		raw:"https://raw-gh.gcdn.mirr.one/",
+		home:"https://gh.gcdn.mirr.one/",
+	},
+    // this is a custom option.
+    // this option may be modified at runtime. 
+    custom: {
+        down:"https://gh.gcdn.mirr.one/",
+        raw:"https://raw-gh.gcdn.mirr.one/",
+        home:"https://gh.gcdn.mirr.one/",
+    }
 }
+
+function throttle (time, fn) {
+  
+    let enable = true
+    let doing = false
+  
+    return function (...args) {
+        if (doing || !enable) return
+  
+        (fn) && (fn).apply(null, args)
+  
+        const timer = setTimeout(() => {
+            doing = false
+        }, time)
+      
+        return function dispose (enable = true) {
+            clearTimeout(timer)
+            enable = false
+        }
+    }
+}
+
+// prevent frequently calling
+const noticeUsingProxyGithubPlugin = throttle(300, () => {
+    new window.Notice("正在通过 ProxyGithub 来代理访问社区插件！")
+})
 
 let include = [
     {
@@ -36,17 +69,19 @@ let include = [
         , to: (url) => url.replace("https://github.com/", proMap[server].down)
     }
     , {
-        match: (url) => url.startsWith("https://raw.githubusercontent.com/") >= 0
+        match: (url) => url.startsWith("https://raw.githubusercontent.com/")
         , to: (url) => url.replace("https://raw.githubusercontent.com/", proMap[server].raw)
     }
     , {
-        match: (url) => url.startsWith("https://github.com/") >= 0
+        match: (url) => url.startsWith("https://github.com/")
         , to: (url) => url.replace("https://github.com/", proMap[server].home)
     }
 ]
 
 // 匹配URL
 function matchUrl(e) {
+    // 'e' may be a number
+    if (!e || typeof e.url !== 'string') return false
 	console.log("开始访问：" + JSON.stringify(e))
     for (var key in include) {
         let item = include[key]
@@ -73,7 +108,7 @@ function proxy(e) {
         e.error = function (e, t) {
             return n(t)
         }
-        debugger
+        // debugger
         if (app.isMobile) {
             forMobile(e);
             return;
@@ -151,7 +186,7 @@ function apProxy() {
             if (!matchUrl(e)) {
                 return ap(e);
             }
-            new window.Notice("正在通过 ProxyGithub 来代理访问社区插件！")
+            noticeUsingProxyGithubPlugin()
             return proxy(e)
         }
     }
@@ -167,8 +202,11 @@ function apProxy() {
         ap = window.Capacitor.registerPlugin("App").request;
         console.log(ap)
         window.Capacitor.registerPlugin("App").request = function (e){
-            matchUrl(e);
-            new window.Notice("正在通过 ProxyGithub 来代理访问社区插件！")
+            
+            if (matchUrl(e)) {
+                noticeUsingProxyGithubPlugin()
+            }
+            
             ap(e);
             // if (matchUrl(e)) {
             //     return ap(e);
@@ -185,12 +223,13 @@ function apElectron() {
     var ap;
     this.regedit = function() {
         ap = window.require("electron").ipcRenderer.send;
-		debugger
+		// debugger
         console.log(ap)
         window.require("electron").ipcRenderer.send = function (a,b,e,...rest){
-			debugger
-            matchUrl(e);
-            new window.Notice("正在通过 ProxyGithub 来代理访问社区插件！")
+			// debugger
+            if (matchUrl(e)) {
+                noticeUsingProxyGithubPlugin()
+            }
             ap(a,b,e, ...rest);
             // if (matchUrl(e)) {
             //     return ap(e);
@@ -214,24 +253,64 @@ class ProxyGithubSettingTab extends PluginSettingTab {
         this.plugin = plugin
     }
     async display() {
-        this.containerEl.empty()
-        new Setting(this.containerEl)
-            .setName('代理服务器')
-            .setDesc(`通过选择不同的服务器来切换代理，可以解决某些情况下，某个服务器无法访问的情况。当前代理服务器：${this.plugin.settings.server}`)
-            // .setValue(this.plugin.settings.server) // <-- Add me!
-            .addDropdown(dropDown => {
-                dropDown.addOption('mirr', '请选择');
-                dropDown.addOption('fastgit', 'fastgit');
-                dropDown.addOption('mtr', 'mtr');
-                dropDown.addOption('ghproxy', 'ghproxy');
-                dropDown.addOption('gitclone', 'gitclone');
-                dropDown.addOption('mirr', 'mirr');
-                dropDown.onChange(async (value) =>	{
-                    this.plugin.settings.server=value
-                    // this.plugin.settings.server = value;
-                    await this.plugin.saveSettings();
-                });
+        const { containerEl: cont, plugin } = this
+
+        cont.empty()
+        cont.createEl('h2', { text: 'Proxy Github Setting' })
+        cont.createEl('br')
+        
+        new Setting(cont)
+        .setName('代理服务器')
+        .setDesc(`通过选择不同的服务器来切换代理，可以解决某些情况下，某个服务器无法访问的情况。`)
+        .addDropdown(dropDown => {
+            
+            dropDown.addOption('mirr', 'mirr')
+            dropDown.addOption('fastgit', 'fastgit')
+            dropDown.addOption('mtr', 'mtr')
+            dropDown.addOption('ghproxy', 'ghproxy')
+            dropDown.addOption('gitclone', 'gitclone')
+            dropDown.addOption('custom', '自定义')
+            // set dropdown value
+            dropDown.setValue(plugin.settings.server)
+            dropDown.onChange(async (value) => {
+                plugin.settings.server = value
+                await plugin.saveSettings()
             });
+
+        });
+
+        // Custom Proxy Feature
+        function saveCustomValue (partial) {
+            Object.assign(plugin.settings.custom, partial)
+            plugin.saveSettings()
+        }
+        
+        new Setting(cont)
+        .setName('自定义代理服务器')
+        .setDesc('设置自定义代理, 上方选择自定义时方可生效。')
+
+        new Setting(cont)
+        .setName('Download')
+        .addText((text) => {
+            text.setValue(proMap.custom.down)
+            text.onChange((v) => saveCustomValue({ down: v }))
+        })
+
+        new Setting(cont)
+        .setName('Raw')
+        .addText((text) => {
+            text.setValue(proMap.custom.raw)
+            text.onChange((v) => saveCustomValue({ raw: v }))
+        })
+
+        new Setting(cont)
+        .setName('Home Page')
+        .addText((text) => {
+            text.setValue(proMap.custom.home)
+            text.onChange((v) => saveCustomValue({ home: v }))
+
+        })
+
     }
 }
 
@@ -242,21 +321,29 @@ let app = new apProxy();
 let apc = new apCapacitor();
 let ape = new apElectron();
 module.exports = class ProxyGithub extends Plugin {
-    onload() {
-        new window.Notice("添加 ProxyGithub 代理访问社区插件！");
+    async onload() {
+        new window.Notice("Proxy Github 正在运行");
+        // for setting select default value
+        await this.loadSettings()
         this.addSettingTab(new ProxyGithubSettingTab(this.app, this));
         ape.regedit();
         apc.regedit();
         app.regedit();
-        this.settings = {server:'mirr'}
     }
     async loadSettings() {
-		this.settings = Object.assign({}, {server:'mirr'}, await this.loadData());
+		this.settings = Object.assign({
+            server:'mirr',
+            custom: proMap.custom
+        }, await this.loadData());
+
+        proMap.custom = this.settings.custom
+        server = this.settings.server
 	}
     async saveSettings() {
-        await this.saveData(this.settings);
-		server = this.settings.server;
-		debugger
+        await this.saveData(this.settings)
+        proMap.custom = this.settings.custom
+		server = this.settings.server
+		// debugger
 	}
 
     onunload() {
