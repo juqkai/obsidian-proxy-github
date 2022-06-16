@@ -60,7 +60,7 @@ function throttle (time, fn) {
 
 // prevent frequently calling
 const noticeUsingProxyGithubPlugin = throttle(300, () => {
-    new window.Notice("正在通过 ProxyGithub 来代理访问社区插件！")
+    console.log("正在通过 ProxyGithub 来代理访问社区插件！")
 })
 
 let include = [
