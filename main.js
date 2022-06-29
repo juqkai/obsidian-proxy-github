@@ -47,6 +47,10 @@ let include = [
 
 // 匹配URL
 function matchUrl(e) {
+	if (e.url === undefined) {
+		console.log("不是合法的地址，无法代理：" + JSON.stringify(e))
+		return false;
+	}
 	console.log("开始访问：" + JSON.stringify(e))
     for (var key in include) {
         let item = include[key]
