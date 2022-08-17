@@ -1,6 +1,6 @@
 const {Plugin, PluginSettingTab, Setting } = require("obsidian");
 
-let server = 'mirr'
+let server = 'fastgit'
 
 let proMap = {
 	fastgit:{
@@ -52,7 +52,7 @@ function matchUrl(e) {
         let item = include[key]
 		console.log(key)
 		console.log(item)
-        if (e.url && item.match(e.url)) {
+        if (e && e.url && item.match(e.url)) {
             e.url = item.to(e.url)
             console.log("要访问的地址：" + e.url)
             if (!e.headers) {
