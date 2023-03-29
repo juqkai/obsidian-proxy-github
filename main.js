@@ -28,6 +28,11 @@ let proMap = {
 		,raw:"https://raw-gh.gcdn.mirr.one/"
 		,home:"https://gh.gcdn.mirr.one/"
 	}
+	,v2ray:{
+		down:"http://localhost:1987/proxy/https://github.com/"
+		,raw:"http://localhost:1987/proxy/https://raw.githubusercontent.com/"
+		,home:"http://localhost:1987/proxy/https://github.com/"
+	}
 }
 
 let include = [
@@ -226,6 +231,7 @@ class ProxyGithubSettingTab extends PluginSettingTab {
                 dropDown.addOption('ghproxy', 'ghproxy');
                 dropDown.addOption('gitclone', 'gitclone');
                 dropDown.addOption('mirr', 'mirr');
+                dropDown.addOption('v2ray', 'v2ray');
                 dropDown.onChange(async (value) =>	{
                     this.plugin.settings.server=value
                     // this.plugin.settings.server = value;
