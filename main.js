@@ -1,32 +1,37 @@
 const {Plugin, PluginSettingTab, Setting } = require("obsidian");
 
-let server = 'fastgit'
+let server = 'ghproxy'
 
 let proMap = {
-	fastgit:{
-		down:"https://download.fastgit.org/"
-		,raw:"https://raw.fastgit.org/"
-		,home:"https://hub.fastgit.org/"
-	}
-	,mtr:{
-		down:"https://download.fastgit.org/"
-		,raw:"https://raw-gh.gcdn.mirr.one/"
-		,home:"https://api.mtr.pub/"
-	}
-	,ghproxy:{
-		down:"https://mirror.ghproxy.com/https://github.com/"
-		,raw:"https://mirror.ghproxy.com/https://github.com/"
-		,home:"https://mirror.ghproxy.com/https://github.com/"
-	}
-	,gitclone:{
-		down:"https://download.fastgit.org/"
-		,raw:"https://raw.fastgit.org/"
-		,home:"https://gitclone.com/github.com/"
-	}
-	,mirr:{
-		down:"https://gh.gcdn.mirr.one/"
-		,raw:"https://raw-gh.gcdn.mirr.one/"
-		,home:"https://gh.gcdn.mirr.one/"
+	// https://ghproxy.com/
+	ghproxy: {
+		down: "https://ghproxy.com/https://github.com/",
+		raw: "https://ghproxy.com/https://raw.githubusercontent.com/",
+		home: "https://ghproxy.com/https://github.com/"
+	},
+	// http://fastgit.org/
+	fastgit: {
+		down: "https://download.fastgit.org/",
+		raw: "https://raw.fastgit.org/",
+		home: "https://hub.fastgit.xyz/"
+	},
+	// https://gitmirror.com/
+	gitmirror: {
+		down: "https://hub.gitmirror.com/",
+		raw: "https://raw.gitmirror.com/",
+		home: "https://hub.gitmirror.com/"
+	},
+	// https://ghps.cc/
+	ghps: {
+		down: "https://ghps.cc/https://github.com/",
+		raw: "https://ghps.cc/https://raw.githubusercontent.com/",
+		home: "https://ghps.cc/https://github.com/"
+	},
+	// https://gh.ddlc.top/
+	ddlc: {
+		down: "https://gh.ddlc.top/https://github.com/",
+		raw: "https://gh.ddlc.top/https://raw.githubusercontent.com/",
+		home: "https://gh.ddlc.top/https://github.com/"
 	}
 }
 
@@ -36,11 +41,11 @@ let include = [
         , to: (url) => url.replace("https://github.com/", proMap[server].down)
     }
     , {
-        match: (url) => url.startsWith("https://raw.githubusercontent.com/") >= 0
+        match: (url) => url.startsWith("https://raw.githubusercontent.com/")
         , to: (url) => url.replace("https://raw.githubusercontent.com/", proMap[server].raw)
     }
     , {
-        match: (url) => url.startsWith("https://github.com/") >= 0
+        match: (url) => url.startsWith("https://github.com/")
         , to: (url) => url.replace("https://github.com/", proMap[server].home)
     }
 ]
@@ -188,13 +193,11 @@ function apElectron() {
 		debugger
         console.log(ap)
         window.require("electron").ipcRenderer.send = function (a,b,e,...rest){
-			debugger
-            matchUrl(e);
-            new window.Notice("正在通过 ProxyGithub 来代理访问社区插件！")
+            if(a === "request-url" && matchUrl(e)){
+                debugger
+                new window.Notice("正在通过 ProxyGithub 来代理访问社区插件！")
+            }
             ap(a,b,e, ...rest);
-            // if (matchUrl(e)) {
-            //     return ap(e);
-            // }
         }
         console.log("apc注册成功")
     }
@@ -220,12 +223,12 @@ class ProxyGithubSettingTab extends PluginSettingTab {
             .setDesc(`通过选择不同的服务器来切换代理，可以解决某些情况下，某个服务器无法访问的情况。当前代理服务器：${this.plugin.settings.server}`)
             // .setValue(this.plugin.settings.server) // <-- Add me!
             .addDropdown(dropDown => {
-                dropDown.addOption('mirr', '请选择');
-                dropDown.addOption('fastgit', 'fastgit');
-                dropDown.addOption('mtr', 'mtr');
                 dropDown.addOption('ghproxy', 'ghproxy');
-                dropDown.addOption('gitclone', 'gitclone');
-                dropDown.addOption('mirr', 'mirr');
+				dropDown.addOption('gitmirror', 'gitmirror');
+				dropDown.addOption('ghps', 'ghps');
+				dropDown.addOption('fastgit', 'fastgit');
+				dropDown.addOption('ddlc', 'ddlc');
+				dropDown.setValue(this.plugin.settings.server)
                 dropDown.onChange(async (value) =>	{
                     this.plugin.settings.server=value
                     // this.plugin.settings.server = value;
@@ -248,10 +251,11 @@ module.exports = class ProxyGithub extends Plugin {
         ape.regedit();
         apc.regedit();
         app.regedit();
-        this.settings = {server:'mirr'}
+        this.settings = {server:'ghproxy'}
+        this.loadSettings();
     }
     async loadSettings() {
-		this.settings = Object.assign({}, {server:'mirr'}, await this.loadData());
+		this.settings = Object.assign({}, {server:'ghproxy'}, await this.loadData());
 	}
     async saveSettings() {
         await this.saveData(this.settings);
